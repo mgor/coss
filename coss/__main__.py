@@ -1,7 +1,7 @@
 import logging
 import asyncio
 
-from typing import List, Dict, Optional, cast
+from typing import List, Dict, cast
 from io import StringIO, BytesIO
 from os import path, getcwd
 from aiohttp import ClientSession
@@ -15,7 +15,6 @@ from marshmallow.exceptions import ValidationError
 from telegram import Bot, InputMediaPhoto
 from telegram.constants import PARSEMODE_MARKDOWN_V2 as MARKDOWN
 from bs4 import BeautifulSoup
-from PIL import Image
 
 yaml = YAML(typ="safe")
 
