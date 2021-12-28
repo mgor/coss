@@ -1,0 +1,4 @@
+.vscode/settings.json
+poetry.lock
+**/*.pyc
+config.yaml
