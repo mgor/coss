@@ -21,8 +21,12 @@ RUN mkdir -p /workspaces/co-stock-status \
 
 COPY pyproject.toml /workspaces/co-stock-status/pyproject.toml
 
+# trick poetry, so that the venv created will be associated with the host mounted source later
 RUN su vscode -c "cd /workspaces/co-stock-status && /home/vscode/.local/bin/poetry install" 2>&1 \
     && rm -rf /workspaces/co-stock-status
+
+RUN curl -sSL https://cli.openfaas.com | sudo -E sh \
+    && su vscode -c "mkdir -p ~/.{kube,config/helm}"
 
 # [Optional] Uncomment this section to install additional OS packages.
 # RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \

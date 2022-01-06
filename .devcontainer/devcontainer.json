@@ -47,6 +47,8 @@
     "mounts": [
         "source=/etc/timezone,target=/etc/timezone,type=bind",
         "source=/etc/localtime,target=/etc/localtime,type=bind",
+        "source=${localEnv:HOME}/.kube,target=/home/vscode/.kube,type=bind",
+        "source=${localEnv:HOME}/.config/helm,target=/home/vscode/.config/helm,type=bind"
     ],
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
     // "forwardPorts": [],
@@ -57,6 +59,11 @@
     "features": {
         "docker-from-docker": "latest",
         "git": "os-provided",
-        "github-cli": "latest"
+        "github-cli": "latest",
+        "kubectl-helm-minikube": {
+            "version": "latest",
+            "helm": "latest",
+            "minikube": "none"
+        }
     }
 }
