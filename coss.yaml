@@ -1,0 +1,16 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: https://127.0.0.1:8080
+functions:
+  coss:
+    lang: python3.10
+    handler: ./coss
+    image: mgor/coss:latest
+    annotations:
+      topic: cron-function
+      schedule: "* */12 * * *"
+    environment:
+      PRODUCTS: ""
+    secrets:
+      - coos-telegram

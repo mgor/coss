@@ -2,3 +2,5 @@
 poetry.lock
 **/*.pyc
 config.yaml
+build/
+**/requirements.txt

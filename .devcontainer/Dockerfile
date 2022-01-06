@@ -14,7 +14,8 @@ RUN if [ "${NODE_VERSION}" != "none" ]; then su vscode -c "umask 0002 && . /usr/
 #    && rm -rf /tmp/pip-tmp
 
 RUN su vscode -c "curl -sSL https://install.python-poetry.org | python3 - -yf" 2>&1 \
-    && /home/vscode/.local/bin/poetry completions bash > /etc/bash_completion.d/poetry
+    && /home/vscode/.local/bin/poetry completions bash > /etc/bash_completion.d/poetry \
+    && su vscode -c "pip3 install --user poetry-exec-plugin" 2>&1
 
 RUN mkdir -p /workspaces/co-stock-status \
     && chown vscode:vscode /workspaces/co-stock-status
@@ -27,6 +28,10 @@ RUN su vscode -c "cd /workspaces/co-stock-status && /home/vscode/.local/bin/poet
 
 RUN curl -sSL https://cli.openfaas.com | sudo -E sh \
     && su vscode -c "mkdir -p ~/.{kube,config/helm}"
+
+RUN VERSION=$(curl -s https://github.com/mikefarah/yq/releases/latest | awk -F\" '{gsub(/.*\//, "", $2); print $2}') \
+    && curl -Lo /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/${VERSION}/yq_linux_amd64 \
+    && chmod +x /usr/local/bin/yq
 
 # [Optional] Uncomment this section to install additional OS packages.
 # RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \

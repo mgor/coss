@@ -55,9 +55,19 @@ def load_configuration() -> Config:
         telegram_token = environ.get("TELEGRAM_TOKEN", None)
         telegram_chat_id = environ.get("TELEGRAM_CHAT_ID", None)
 
-        if telegram_chat_id is None or telegram_token is None:
+        if telegram_token is None or telegram_chat_id is None:
+            try:
+                with open("/var/openfaas/secrets/token") as fd:
+                    telegram_token = fd.read().strip()
+
+                with open("/var/openfaas/secrets/chat_id") as fd:
+                    telegram_chat_id = fd.read().strip()
+            except FileNotFoundError:
+                telegram_chat_id = telegram_token = None
+
+        if telegram_token is None or telegram_chat_id is None:
             raise ValueError(
-                "environment variable TELEGRAM_TOKEN and/or TELEGRAM_CHATID not set"
+                "required telegram information not found in environment variables or openfaas secrets"
             )
 
         config.update(
