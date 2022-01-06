@@ -2,8 +2,8 @@ import logging
 import asyncio
 
 from typing import List, Dict, cast
-from io import StringIO, BytesIO
-from os import path, getcwd
+from io import StringIO
+from os import environ, path, getcwd
 from aiohttp import ClientSession
 from dataclasses import dataclass
 from ssl import SSLContext
@@ -35,25 +35,49 @@ class Config:
 
 @dataclass
 class Product:
-    id: str
+    product: str
     name: str
-    product_id: str
+    id: str
     price: str
-    image: BytesIO
+    image: str
     status: str
 
 
 def load_configuration() -> Config:
-    with open(path.join(getcwd(), "config.yaml"), encoding="utf-8") as fd:
-        loaded = yaml.load(fd.read())
-        ConfigSchema = class_schema(Config)
+    products = environ.get("PRODUCTS", None)
 
-        return ConfigSchema().load(loaded)
+    config: Dict[str, List[str] | Dict[str, str]] = {}
+
+    if products is None:
+        with open(path.join(getcwd(), "config.yaml"), encoding="utf-8") as fd:
+            config = yaml.load(fd.read())
+    else:
+        telegram_token = environ.get("TELEGRAM_TOKEN", None)
+        telegram_chat_id = environ.get("TELEGRAM_CHAT_ID", None)
+
+        if telegram_chat_id is None or telegram_token is None:
+            raise ValueError(
+                "environment variable TELEGRAM_TOKEN and/or TELEGRAM_CHATID not set"
+            )
+
+        config.update(
+            {
+                "products": [product.strip() for product in products.split(" ")],
+                "telegram": {
+                    "token": telegram_token,
+                    "chat_id": telegram_chat_id,
+                },
+            }
+        )
+
+    ConfigSchema = class_schema(Config)
+
+    return ConfigSchema().load(config)
 
 
-async def storage_status(product_id: str, session: ClientSession) -> Product:
+async def storage_status(product: str, session: ClientSession) -> Product:
     ssl = SSLContext()
-    url = f"https://www.clasohlson.com/se/p/{product_id}"
+    url = f"https://www.clasohlson.com/se/p/{product}"
     async with session.get(url, ssl=ssl) as response:
         html = await response.read()
         soup = BeautifulSoup(html, "html.parser")
@@ -74,31 +98,27 @@ async def storage_status(product_id: str, session: ClientSession) -> Product:
                 )
                 product_info.update(jsonloads(script_contents))
 
-    product_id = product_info["productId"]
-    if len(product_id) < 9:
-        padding = 9 - len(product_id)
-        product_id = product_id[:2] + "0" * padding + product_id[2:]
+    id = product_info["productId"]
+    if len(id) < 9:
+        padding = 9 - len(id)
+        id = id[:2] + "0" * padding + id[2:]
 
     offers = cast(Dict[str, str], product_info["offers"])
 
     url = (
         "https://www.clasohlson.com/se/cocheckout/getCartDataOnReload?"
-        f"variantProductCode={product_id}"
+        f"variantProductCode={id}"
     )
 
     async with session.get(url, ssl=ssl) as response:
         storage_status = await response.json()
 
-    url = f"https://images.clasohlson.com{product_info['image']}"
-
-    async with session.get(url, ssl=ssl) as response:
-        image = BytesIO(await response.read())
-        image.seek(0)
+    image = f"https://images.clasohlson.com{product_info['image']}"
 
     return Product(
-        id=product_id,
+        product=product,
         name=product_info["name"],
-        product_id=product_id,
+        id=id,
         image=image,
         price=f'{offers["price"]} {offers["priceCurrency"]}',
         status=storage_status["webStockStatus"],
@@ -130,7 +150,7 @@ def main() -> int:
 
             message = (
                 f"[{name}: {product.price}]"
-                f"(https://www.clasohlson.com/se/p/{product.id})"
+                f"(https://www.clasohlson.com/se/p/{product.product})"
             )
 
             if product.status != "inStock":
@@ -157,6 +177,9 @@ def main() -> int:
         return 0
     except FileNotFoundError:
         logger.error(f"config.yaml not found in {getcwd()}")
+        return 1
+    except ValueError as e:
+        logger.error(str(e))
         return 1
     except ValidationError as e:
         error = StringIO()
