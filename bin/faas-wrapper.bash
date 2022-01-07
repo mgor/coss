@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 main() {
-    if [[ "$*" != *"build" ]]; then
+    if [[ "$*" != *"build" && "$*" != *"list"* ]]; then
         local image
         local registry
         image="$(yq e '.functions.coss.image' coss.yaml)"

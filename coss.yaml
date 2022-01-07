@@ -9,7 +9,7 @@ functions:
     image: mgor/coss:latest
     annotations:
       topic: cron-function
-      schedule: "* */12 * * *"
+      schedule: "0 */12 * * *"
     environment:
       PRODUCTS: ""
     secrets:
