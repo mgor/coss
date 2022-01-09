@@ -154,6 +154,7 @@ def main() -> int:
         products = loop.run_until_complete(check(loop, config))
         media_group: List[InputMediaPhoto] = []
         messages: List[str] = []
+        send_message: bool = False
 
         for product in products:
             name = product.name.replace("-", "\\-")
@@ -165,6 +166,9 @@ def main() -> int:
 
             if product.status != "inStock":
                 message = f"~{message}~"
+            else:
+                send_message = True
+
             messages.append(message)
             media_group.append(
                 InputMediaPhoto(
@@ -174,15 +178,15 @@ def main() -> int:
                 )
             )
 
-        bot = Bot(token=config.telegram.token)
-
-        bot.send_media_group(chat_id=config.telegram.chat_id, media=media_group)
-        bot.send_message(
-            chat_id=config.telegram.chat_id,
-            text="\n".join(messages),
-            disable_web_page_preview=True,
-            parse_mode=MARKDOWN,
-        )
+        if send_message:
+            bot = Bot(token=config.telegram.token)
+            bot.send_media_group(chat_id=config.telegram.chat_id, media=media_group)
+            bot.send_message(
+                chat_id=config.telegram.chat_id,
+                text="\n".join(messages),
+                disable_web_page_preview=True,
+                parse_mode=MARKDOWN,
+            )
 
         return 0
     except FileNotFoundError:
